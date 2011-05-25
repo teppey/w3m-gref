@@ -14,42 +14,64 @@
 (define-record-type (topic (pseudo-rtd <vector>)) #t #f
   key href section)
 
-(define *archives*
-  '((en . "http://practical-scheme.net/vault/gauche-refe.tgz")
-    (ja . "http://practical-scheme.net/vault/gauche-refj.tgz")))
-
 (define (main args)
-  (let-args (cdr args)
-    ((html-dir  "d|html-dir=s")
-     (lang      "l|lang=y" 'ja)
-     (help      "h|help" => (cut usage))
-     (else  =>  (^(option rest cont)
-                  (print "unknown option: " option)
-                  (usage))))
+  (define archive?   file-is-regular?)
+  (define directory? file-is-directory?)
+  (define uri?       #/^http/)
+  (unless (= 2 (length args)) (usage))
+  (let* ([source (cadr args)]
+         [handler (cond [(archive? source)   handle-archive]
+                        [(directory? source) handle-directory]
+                        [(uri? source)       handle-uri]
+                        [else (error "something wrong:" source)])])
 
     (unless (file-exists? (app-directory))
       (create-app-directory))
 
-    (cond ((and (not html-dir)
-                (assq-ref *archives* lang))
-           => (lambda (archive-uri)
-                (set! html-dir (download-reference archive-uri (app-directory)))))
-          ((and html-dir (relative-path? html-dir)
-           (set! html-dir
-             (sys-normalize-pathname
-               html-dir :absolute #t :expand #t :canonicalize #t)))))
+    (let1 html-dir (sys-normalize-pathname (handler source)
+                     :absolute #t :expand #t :canonicalize #t)
+      (make-index html-dir)
+      (write-config `((html-dir . ,html-dir)
+                      (db-path  . ,(db-path))))
+      0)))
 
-    (unless (and html-dir
-                 (absolute-path? html-dir)
-                 (file-is-directory? html-dir))
-      (error "not directory:" html-dir))
+(define (handle-archive archive)
+  (let1 pc (run-process `(tar xzf ,archive -C ,(app-directory)))
+    (process-wait pc)
+    (build-path (app-directory) (path->html-dir archive))))
 
-    (make-index html-dir)
+(define (handle-directory directory)
+  directory)
 
-    (write-config (app-directory)
-                  `((html-dir . ,html-dir)
-                    (db-path  . ,(db-path))))
-    0))
+(define (handle-uri uri)
+  (define (split-uri uri)
+    (receive (scheme specific)
+      (uri-scheme&specific uri)
+      (receive (authority path query fragment)
+        (uri-decompose-hierarchical specific)
+        (lambda (message)
+          (case message
+            ((scheme) scheme)
+            ((authority) authority)
+            ((path) path)
+            ((query) query)
+            ((fragment) fragment)
+            (else (error "split-uri - unknown message:" message)))))))
+
+  (let ((uri (split-uri uri))
+        (proxy (and-let* ((env (sys-getenv "http_proxy")))
+                 (split-uri env))))
+    (receive (status hdrs body)
+      (call-with-output-process `(tar xzf - -C ,(app-directory))
+        (lambda (sink)
+          (http-get (uri 'authority) (uri 'path)
+                    :proxy (and proxy (proxy 'authority))
+                    :sink sink
+                    :flusher (lambda (sink headers)
+                               (close-output-port sink)))))
+      (unless (string=? status "200")
+        (error "download failed. Server returns a" status))
+      (build-path (app-directory) (path->html-dir (uri 'path))))))
 
 (define (usage)
   (for-each print
@@ -65,38 +87,8 @@
 (define (create-app-directory)
   (make-directory* (app-directory) #o755))
 
-(define (split-uri uri)
-  (receive (scheme specific)
-    (uri-scheme&specific uri)
-    (receive (authority path query fragment)
-      (uri-decompose-hierarchical specific)
-      (lambda (message)
-        (case message
-          ((scheme) scheme)
-          ((authority) authority)
-          ((path) path)
-          ((query) query)
-          ((fragment) fragment)
-          (else (error "split-uri - unknown message:" message)))))))
-
   (define (path->html-dir path)
     (car (string-split (regexp-replace #/^.*\// path "") ".")))
-
-(define (download-reference uri extract-dir)
-  (let ((uri (split-uri uri))
-        (proxy (and-let* ((env (sys-getenv "http_proxy")))
-                 (split-uri env))))
-    (receive (status hdrs body)
-      (call-with-output-process `(tar xzf - -C ,extract-dir)
-        (lambda (sink)
-          (http-get (uri 'authority) (uri 'path)
-                    :proxy (and proxy (proxy 'authority))
-                    :sink sink
-                    :flusher (lambda (sink headers)
-                               (close-output-port sink)))))
-      (unless (string=? status "200")
-        (error "download failed. Server returns a" status))
-      (build-path extract-dir (path->html-dir (uri 'path))))))
 
 (define (make-index html-dir)
   (let* ((htmls (get-htmls html-dir))
@@ -198,5 +190,5 @@
                                  #f)))
     :encoding "*jp"))
 
-(define (write-config dir sexp)
-  (with-output-to-file (build-path dir "config") (cute write sexp)))
+(define (write-config sexp)
+  (with-output-to-file (build-path (app-directory) "config") (cute write sexp)))
