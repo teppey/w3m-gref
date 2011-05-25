@@ -52,11 +52,8 @@
     0))
 
 (define (usage)
-  (for-each print (list #`"usage: gosh ,(sys-basename *program-name*) [options]"
-                        "options:"
-                        "\t-d, --html-dir\tGauche reference directory"
-                        "\t-l, --lang\tlanguage of reference manual (en|ja)"
-                        "\t-h, --help\tshow this message"))
+  (for-each print
+    (list #`"usage: gosh ,(sys-basename *program-name*) file|directory|URL"))
             (exit 0))
 
 (define (app-directory)
