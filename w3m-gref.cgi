@@ -2,7 +2,7 @@
 ;; vim:set ft=scheme fileencoding=utf-8:
 
 ;;;
-;;; w3m-gref.cgi - Gaucheのリファレンスを検索するLocal CGI
+;;; w3m-gref.cgi - Gaucheのリファレンスを検索するlocal CGI
 ;;;
 ;;; by Teppei Hamada <temada@gmail.com>
 ;;;
