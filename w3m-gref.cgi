@@ -119,12 +119,12 @@
 ;; result : (name href1 href2 ...)
 (define (search query)
   (rxmatch-case query
-    [#/^\/(.+[^\\])\/(i)?$/ (#f rx case-fold)  ; /regexp/[option]
+    ;; /regexp/[option] or regexp/[option]
+    [#/^\/?(.+)(?<!\\)\/(i)?$/ (#f rx case-fold)
      (regexp-search rx (and case-fold (not (string-null? case-fold))))]
-    [#/^\/(.+)$/ (#f rx)                       ; /regexp
+    ;; /regexp
+    [#/^\/(.+)$/ (#f rx)
      (regexp-search rx)]
-    [#/^(.+[^\\])\/(i)?$/ (#f rx case-fold)    ; regexp/[option]
-     (regexp-search rx (and case-fold (not (string-null? case-fold))))]
     [else
       (fixed-search query)]))
 
