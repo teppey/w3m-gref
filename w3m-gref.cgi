@@ -4,7 +4,8 @@
 ;;;
 ;;; w3m-gref.cgi - Gaucheのリファレンスを検索するlocal CGI
 ;;;
-;;; by Teppei Hamada <temada@gmail.com>
+;;; (c) 2011 Teppei Hamada <temada@gmail.com>
+;;; This script is freely distributable under the terms of an MIT-style license.
 ;;;
 
 (use dbm)
