@@ -146,6 +146,7 @@
 (define (toc-file dir)
   (car (glob (build-path dir "gauche-ref[ej]_toc.html"))))
 
+;; based on http://www.callcc.net/diary/20070118.html#p01
 (define (index-html? html)
   (with-input-from-file html
     (lambda ()
