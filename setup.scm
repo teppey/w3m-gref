@@ -1,5 +1,4 @@
 (use dbm)
-(use dbm.gdbm)
 (use file.util)
 (use gauche.parseopt)
 (use gauche.process)
@@ -18,6 +17,9 @@
   (define archive?   file-is-regular?)
   (define directory? file-is-directory?)
   (define uri?       #/^http/)
+  (define (dbm-class->type dbm-class)
+    (let1 s (symbol->string (~ dbm-class 'name))
+      (string->symbol (if-let1 m (#/^<(.+)>$/ s) (m 1) s))))
   (unless (= 2 (length args)) (usage))
   (let* ([source (cadr args)]
          [handler (cond [(archive? source)   handle-archive]
@@ -28,10 +30,11 @@
     (unless (file-exists? (app-directory))
       (create-app-directory))
 
-    (let1 html-dir (sys-normalize-pathname (handler source)
-                     :absolute #t :expand #t :canonicalize #t)
-      (make-index html-dir)
+    (let* ((html-dir (sys-normalize-pathname (handler source)
+                       :absolute #t :expand #t :canonicalize #t))
+           (dbm-class (make-index html-dir)))
       (write-config `((html-dir . ,html-dir)
+                      (db-class . ,(dbm-class->type dbm-class))
                       (db-path  . ,(db-path))))
       0)))
 
@@ -91,24 +94,26 @@
     (car (string-split (regexp-replace #/^.*\// path "") ".")))
 
 (define (make-index html-dir)
+  (define (with-db dbm-class db-path proc)
+    (remove-files db-path)
+    (let1 db (dbm-open dbm-class :path db-path :rw-mode :create :value-convert #t)
+      (begin0 (proc db)
+              (dbm-close db))))
   (let* ((htmls (get-htmls html-dir))
          (topics (append (append-map get-topics (get-index-htmls htmls))
                          (get-section-topics (toc-file html-dir))))
-         (db (dbm-open <gdbm> :path (db-path) :rw-mode :create :value-convert #t)))
-
+         (dbm-class (or (dbm-type->class 'gdbm) (dbm-type->class 'fsdbm))))
+    (with-db dbm-class (db-path)
+      (lambda (db)
            ;; html -> title
            (for-each (^(html)
                        (dbm-put! db (sys-basename html) (html-title html)))
                      htmls)
-
            ;; topic -> (href ...)
            (for-each (match-lambda
                        ((key . hrefs) (dbm-put! db key hrefs)))
                      (merge-topics topics))
-
-           (dbm-close db)
-           )
-  )
+           dbm-class))))
 
 (define (topic=? t1 t2)
   (and (string=? (topic-key t1) (topic-key t2))
