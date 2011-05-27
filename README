@@ -1,0 +1,80 @@
+This is w3m-gref, local CGI script for w3m for seaching
+Gauche reference manual.
+
+Requirements
+------------
+
+  Gauche 0.9.1 or later
+
+
+Install
+-------
+
+  1. Download and extract archive
+
+    $ curl -L http://github.com/downloads/teppey/w3m-gref/w3m-gref-0.1.tgz | tar xzf -
+    $ cd w3m-gref-0.1
+    $ ls
+    setup.scm w3m-gref.cgi
+
+    Or checkout from github.
+
+    $ git clone git://github.com/teppey/w3m-gref.git
+    $ cd w3m-gref
+
+  2. Create database
+
+    If you have already had the archive of the reference manual of Gauche and
+    the directory that extract it, they can be specified for setup.scm.
+
+    $ gosh setup.scm http://practical-scheme.net/gauche/vault/gauche-refe.tgz
+    $ cp w3m-gref.cgi $HOME/.w3m/cgi-bin
+    $ chmod +x $HOME/.w3m/cgi-bin/w3m-gref.cgi
+    $ echo "gref: file:/cgi-bin/w3m-gref.cgi?%s" >> $HOME/.w3m/urimethodmap
+
+    Please change prefix "gref:" according to your preference.
+
+
+Usage
+-----
+
+  Search <TOPIC> and jump to manual page. <TOPIC> can be specified
+  function/module/section of reference, etc.  If two or more results exists,
+  display listing page.
+
+    gref:cons        Shows manual page of "cons".
+    gref:map         Shows list page.
+
+  Put '/' on the head or tail (or both) of keyword, it is considered regular
+  expression.
+
+    gref:/map$       Shows keywords that ends by "map".
+    gref:map$/       Ditto.
+    gref:/map$/      Ditto.
+
+  Put 'i' after the tail of '/', ignore case during the search.
+
+    gref:/rand/i     Shows 'RAND_MAX' and more results.
+
+
+License
+-------
+
+  MIT-style license.
+  For details, see the file "MIT-LICENSE.txt".
+
+
+References
+----------
+
+  w3m <http://sourceforge.net/projects/w3m/>
+  Gauche <http://practical-scheme.net/gauche/index-j.html>
+
+
+Github repository
+-----------------
+
+  https://github.com/teppey/w3m-gref
+
+                                                                   Teppei Hamada
+                                                              <temada@gmail.com>
