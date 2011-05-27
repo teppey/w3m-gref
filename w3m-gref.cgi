@@ -9,7 +9,6 @@
 ;;;
 
 (use dbm)
-(use dbm.gdbm :only (<gdbm>))
 (use file.util :only (home-directory temporary-directory build-path))
 (use gauche.record :only (define-record-type))
 (use rfc.uri :only (uri-decode-string))
@@ -32,12 +31,14 @@
 (define (root-url)
   (path->url (car (glob (build-path (config 'html-dir) "gauche-ref[ej].html")))))
 
-(define (with-db proc)
-  (let1 db (dbm-open <gdbm> :path (config 'db-path) :rw-mode :read :value-convert #t)
-    (unwind-protect
-      (proc db)
-      (unless (dbm-closed? db)
-        (dbm-close db)))))
+(define with-db
+  (let1 db-class (db-type->class (config 'db-type))
+    (lambda (proc)
+      (let1 db (dbm-open db-class :path (config 'db-path) :rw-mode :read :value-convert #t)
+        (unwind-protect
+          (proc db)
+          (unless (dbm-closed? db)
+            (dbm-close db)))))))
 
 (define (eprint content)
   (with-output-to-file (build-path (temporary-directory) "gref-debug")
