@@ -25,7 +25,7 @@
          [handler (cond [(archive? source)   handle-archive]
                         [(directory? source) handle-directory]
                         [(uri? source)       handle-uri]
-                        [else (error "something wrong:" source)])])
+                        [else (error "expected file/directory/URL, but got:" source)])])
 
     (unless (file-exists? (app-directory))
       (create-app-directory))
