@@ -1,3 +1,7 @@
+;;;
+;;; setup.scm - create database for w3m-gref.cgi
+;;;
+
 (use dbm)
 (use file.util)
 (use gauche.parseopt)
