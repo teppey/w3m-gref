@@ -16,7 +16,7 @@
 
 (define *app-directory* (build-path (home-directory) ".w3m-gref"))
 
-(define config
+(define *config*
   (let1 alist (with-input-from-file (build-path *app-directory* "config") read)
     (lambda (key)
       (and-let* ((pair (assoc key alist)))
@@ -26,12 +26,12 @@
   (pa$ string-append "file://"))
 
 (define (root-url)
-  (path->url (car (glob (build-path (config 'html-dir) "gauche-ref[ej].html")))))
+  (path->url (car (glob (build-path (*config* 'html-dir) "gauche-ref[ej].html")))))
 
 (define with-db
-  (let1 db-class (dbm-type->class (config 'db-type))
+  (let1 db-class (dbm-type->class (*config* 'db-type))
     (lambda (proc)
-      (let1 db (dbm-open db-class :path (config 'db-path) :rw-mode :read :value-convert #t)
+      (let1 db (dbm-open db-class :path (*config* 'db-path) :rw-mode :read :value-convert #t)
         (unwind-protect
           (proc db)
           (unless (dbm-closed? db)
@@ -103,7 +103,7 @@
 
 (define (itemize query results)
   (define (href->url href)
-    (path->url (build-path (config 'html-dir) href)))
+    (path->url (build-path (*config* 'html-dir) href)))
   (define (href->title href)
     (let1 file (or (string-scan href #\# 'before) href)
       (or (with-db (^(db) (dbm-get db file #f)))
