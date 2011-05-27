@@ -34,7 +34,7 @@
                        :absolute #t :expand #t :canonicalize #t))
            (dbm-class (make-index html-dir)))
       (write-config `((html-dir . ,html-dir)
-                      (db-class . ,(dbm-class->type dbm-class))
+                      (db-type  . ,(dbm-class->type dbm-class))
                       (db-path  . ,(db-path))))
       0)))
 
