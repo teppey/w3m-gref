@@ -32,7 +32,7 @@
   (path->url (car (glob (build-path (config 'html-dir) "gauche-ref[ej].html")))))
 
 (define with-db
-  (let1 db-class (db-type->class (config 'db-type))
+  (let1 db-class (dbm-type->class (config 'db-type))
     (lambda (proc)
       (let1 db (dbm-open db-class :path (config 'db-path) :rw-mode :read :value-convert #t)
         (unwind-protect
