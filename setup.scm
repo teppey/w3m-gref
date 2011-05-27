@@ -24,7 +24,9 @@
   (define (dbm-class->type dbm-class)
     (let1 s (symbol->string (~ dbm-class 'name))
       (string->symbol (if-let1 m (#/^<(.+)>$/ s) (m 1) s))))
+
   (unless (= 2 (length args)) (usage))
+
   (let* ([source (cadr args)]
          [handler (cond [(archive? source)   handle-archive]
                         [(directory? source) handle-directory]
