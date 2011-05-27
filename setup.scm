@@ -97,8 +97,10 @@
   (define (with-db dbm-class db-path proc)
     (remove-files db-path)
     (let1 db (dbm-open dbm-class :path db-path :rw-mode :create :value-convert #t)
-      (begin0 (proc db)
-              (dbm-close db))))
+      (unwind-protect
+        (proc db)
+        (unless (dbm-closed? db)
+          (dbm-close db)))))
   (let* ((htmls (get-htmls html-dir))
          (topics (append (append-map get-topics (get-index-htmls htmls))
                          (get-section-topics (toc-file html-dir))))
