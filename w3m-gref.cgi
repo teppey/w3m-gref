@@ -22,30 +22,10 @@
       (and-let* ((pair (assoc key alist)))
         (cdr pair)))))
 
-(define path->url
-  (pa$ string-append "file://"))
-
-(define (root-url)
-  (path->url (car (glob (build-path (*config* 'html-dir) "gauche-ref[ej].html")))))
-
-(define with-db
-  (let1 db-class (dbm-type->class (*config* 'db-type))
-    (lambda (proc)
-      (let1 db (dbm-open db-class :path (*config* 'db-path) :rw-mode :read :value-convert #t)
-        (unwind-protect
-          (proc db)
-          (unless (dbm-closed? db)
-            (dbm-close db)))))))
-
-(define (eprint content)
-  (with-output-to-file (build-path (temporary-directory) "gref-debug")
-    (lambda () (write content) (newline) (flush)))
-  content)
-
 (define-record-type item  #t #f
   name url section)
 
-;; ---------------------------------------------------------------------
+;; ---------------------------------------------------------
 ;; Entry point
 ;;
 (define (main _)
@@ -115,7 +95,7 @@
   (values query (append-map result->item results)))
 
 ;; query -> (result ...)
-;; result : (name href1 href2 ...)
+;;   result : (name href1 href2 ...)
 (define (search query)
   (rxmatch-case query
     ;; /regexp/[option] or regexp/[option]
@@ -146,3 +126,25 @@
 (define (get-query)
   (and-let* ((query (string-scan (sys-getenv "QUERY_STRING") ":" 'after)))
     (uri-decode-string query)))
+
+(define path->url
+  (pa$ string-append "file://"))
+
+(define (root-url)
+  (path->url (car (glob (build-path (*config* 'html-dir) "gauche-ref[ej].html")))))
+
+(define with-db
+  (let1 db-class (dbm-type->class (*config* 'db-type))
+    (lambda (proc)
+      (let1 db (dbm-open db-class :path (*config* 'db-path) :rw-mode :read :value-convert #t)
+        (unwind-protect
+          (proc db)
+          (unless (dbm-closed? db)
+            (dbm-close db)))))))
+
+;; for debug
+(define (eprint content)
+  (with-output-to-file (build-path (temporary-directory) "gref-debug")
+    (lambda () (write content) (newline) (flush)))
+  content)
+
