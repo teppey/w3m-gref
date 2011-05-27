@@ -78,7 +78,7 @@
 
 (define (usage)
   (for-each print
-    (list #`"usage: gosh ,(sys-basename *program-name*) file|directory|URL"))
+    (list #`"usage: gosh ,(sys-basename *program-name*) file/directory/URL"))
             (exit 0))
 
 (define (app-directory)
